@@ -2,11 +2,14 @@
 This repository contains the resources to be used during the eBPF Summit demo.
 
 ## Demo overview
-**The high level idea for the demo:**
-Having x services running in a server exposed in different ports, without having to edit or make any changes at all to them, it is possible to monitor from which locations of the world are those being consumed. 
-The attendees could try making http GET request to any of the services, and in real time we will be able to see in the map the points from where the Summit attendees are joining. 
+**The high level idea for the demo:**<br/>
+Having x services running in a server exposed in different ports, without having to edit or make any changes at all to them, it is possible to monitor from which locations of the world are those being consumed.<br/>
+The attendees could try making http GET request to any of the services, and in real time we will be able to see in the map the points from where the Summit attendees are joining.<br/>
+
 
 <img src="/docs/demoOverview.png" alt="demoOverviewDiagram">
+
+<br/>
 
 **Events flow:**
 * The server to be used will be a Ubuntu VM from GCP (or other cloud provider).
