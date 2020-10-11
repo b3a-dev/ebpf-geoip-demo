@@ -1,0 +1,142 @@
+                     <html>
+<head>
+  <script src="https://cdn.anychart.com/releases/v8/js/anychart-base.min.js"></script>
+  <script src="https://cdn.anychart.com/releases/v8/js/anychart-ui.min.js"></script>
+  <script src="https://cdn.anychart.com/releases/v8/js/anychart-exports.min.js"></script>
+  <script src="https://cdn.anychart.com/releases/v8/js/anychart-map.min.js"></script>
+  <script src="https://cdn.anychart.com/releases/v8/js/anychart-data-adapter.min.js"></script>
+  <script src="https://cdn.anychart.com/geodata/latest/custom/world/world.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.15/proj4.js"></script>
+  <link href="https://cdn.anychart.com/releases/v8/css/anychart-ui.min.css" type="text/css" rel="stylesheet">
+  <link href="https://cdn.anychart.com/releases/v8/fonts/css/anychart-font.min.css" type="text/css" rel="stylesheet">
+  <style type="text/css">
+
+    html,
+    body,
+    #container {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  
+</style>
+</head>
+<body>
+  
+  <div id="container"></div>
+  
+
+  <script>
+
+    anychart.onDocumentReady(function () {
+      // The data used in this sample can be obtained from the CDN
+      // https://cdn.anychart.com/samples/maps-bubble/bubble-christian-map/data.json
+      anychart.data.loadJsonFile(
+        '/data.json',
+        function (data) {
+          var dataSet = anychart.data.set(data);
+          var mapping = dataSet.mapAs({
+            name: 'name',
+            id: 'id',
+            size: 'amount',
+            value: 'percent'
+          });
+
+          // Creates Map Chart
+          var map = anychart.map();
+          map.padding([20, 0, 10, 0]);
+          // Sets geodata using https://cdn.anychart.com/geodata/latest/custom/world/world.js
+          map.geoData('anychart.maps.world');
+
+          map
+            .credits()
+            .enabled(true)
+            .url('https://en.wikipedia.org/wiki/Christianity_by_country')
+            .text(
+              'Data source: https://en.wikipedia.org/wiki/Christianity_by_country'
+            )
+            .logoSrc('https://en.wikipedia.org/static/favicon/wikipedia.ico');
+
+          // Sets Chart Title
+          map
+            .title()
+            .enabled(true)
+            .text('Requests by country')
+            .padding([0, 0, 10, 0]);
+
+          // Sets bubble max size settings
+          map.minBubbleSize('0.5%').maxBubbleSize('5%');
+
+          // Creates bubble series1
+          var series1 = map.bubble(mapping);
+          // Sets series1 settings
+          series1
+            .name('Requests')
+            // Sets series1 geo id field settings
+            .geoIdField('iso_a2')
+            .fill('#1976d2 0.6')
+            .stroke('1 #1976d2 0.9');
+          series1
+            .legendItem()
+            .iconType('circle')
+            .iconFill('#1976d2 0.6')
+            .iconStroke('1 #1976d2 0.9');
+
+
+
+          map
+            .legend()
+            .enabled(true)
+            .position('center-top')
+            .align('center')
+            .itemsLayout('horizontal')
+            .padding(0, 0, 30, 0)
+            .paginator(false);
+          map.interactivity().selectionMode('none');
+
+          map
+            .tooltip()
+            .useHtml(true)
+            .title({ fontColor: '#7c868e' })
+            .padding([8, 13, 10, 13])
+            .format(function () {
+              var value =
+                '<span style="color: #545f69; font-size: 12px; font-weight: bold">';
+              var description =
+                '<br/><span style="color: #7c868e; font-size: 12px; font-style: italic">';
+              return (
+                value +
+                parseInt(this.getData('amount')).toLocaleString('en-US') +
+                '</span></strong>' +
+                description +
+                this.getData('percent') +
+                '%</span>'
+              );
+            });
+
+          map
+            .tooltip()
+            .background()
+            .enabled(true)
+            .fill('#fff')
+            .stroke('#c1c1c1')
+            .corners(3)
+            .cornerType('round');
+
+          // create zoom controls
+          var zoomController = anychart.ui.zoom();
+          zoomController.render(map);
+
+          // Sets container id for the chart
+          map.container('container');
+          // Initiates chart drawing
+          map.draw();
+        }
+      );
+    });
+  
+</script>
+</body>
+</html>
+                

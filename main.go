@@ -1,0 +1,177 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"strconv"
+
+	"github.com/abh/geoip"
+)
+
+// File containing GeoIP Lite database (Maxmind)
+const geoIPFile = "GeoIP.dat"
+
+// mapPoint is usedd to create a point in the Javascript map
+type mapPoint struct {
+
+	// Name of the country
+	Name string `json:"name"`
+
+	// ID is the country code of the country
+	ID string `json:"id"`
+
+	// Percentage of the requests for this point
+	Percent string `json:"percent"`
+
+	// Number of requests for this point
+	Amount string `json:"amount"`
+}
+
+// For GeoIP to work you need to have GeoIP lib installed in the system
+// as this Go lib is just a wrapper
+// Mac: `brew install geoip`
+// Ubuntu: `apt-get install -y geoip-database`
+var gi *geoip.GeoIP
+
+// requestsByCountry contains request counter for each country
+var requestsByCountry map[string]int
+
+// requestsTotal contains counter of total requests
+var requestsTotal int
+
+// A request is described as a string with the source IPv4 Address
+var requests chan string
+
+func main() {
+
+	var err error
+
+	requests = make(chan string)
+	requestsByCountry = make(map[string]int)
+	go readRequests()
+
+	gi, err = geoip.Open(geoIPFile)
+	if err != nil {
+		log.Fatalln("Could not open GeoIP database")
+	}
+
+	// Serve static files (index.html) for client side in browser
+	http.Handle("/", http.FileServer(http.Dir("./static")))
+
+	// Map chart in index.html will call /data.json to read data
+	http.HandleFunc("/data.json", mapDataHanddler)
+
+	// Post new word
+	http.HandleFunc("/word", postWordHandler)
+
+	// Sample request. This endpoint is only for testing
+	// purposes. It simulates reading a request from eBPF
+	http.HandleFunc("/request", exampleRequest)
+
+	log.Println("Listening on :3000...")
+	err = http.ListenAndServe(":3000", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+// readRequests reads requests from channel
+// request must be a string containing the ipv4 address
+// example: 8.8.8.8
+func readRequests() {
+	for {
+		select {
+		case ip := <-requests:
+			fmt.Println("New request ", ip)
+			go processRequest(ip)
+		}
+	}
+
+}
+
+// processRequest invokes getoIP database to get country code
+// then increments 2 counters:
+// - specific counter for country code
+// - global counter
+func processRequest(ip string) {
+	countryCode := getCountryByIP(ip)
+	requestsByCountry[countryCode]++
+	requestsTotal++
+}
+
+// getCountryByIP given a IPv4 address it returns
+// a country code (I.E. "ES")
+func getCountryByIP(ip string) string {
+	country, _ := gi.GetCountry(ip)
+	return country
+
+}
+
+// mapDataHanddler writes the json body needed to draw in the map (index.html)
+// The returnedd object needs to be an array of:
+// name: Name of the country
+// id: country ID
+// percent: percent of the total requests in that country
+// amount: number requests in that country
+func mapDataHanddler(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	points := []mapPoint{}
+	for country, amount := range requestsByCountry {
+		point := mapPoint{
+			Name:    country,
+			ID:      country,
+			Amount:  strconv.Itoa(amount),
+			Percent: fmt.Sprintf("%f", (float64(amount)/float64(requestsTotal))*100),
+		}
+		points = append(points, point)
+
+	}
+	str, _ := json.Marshal(points)
+	fmt.Fprintf(w, string(str))
+}
+
+func postWordHandler(w http.ResponseWriter, req *http.Request) {
+
+	if req.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Read body
+	b, err := ioutil.ReadAll(req.Body)
+	defer req.Body.Close()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Print body back
+	fmt.Fprintf(w, string(b))
+
+}
+
+func exampleRequest(w http.ResponseWriter, req *http.Request) {
+
+	if req.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Read body
+	b, err := ioutil.ReadAll(req.Body)
+	defer req.Body.Close()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Print body back
+	fmt.Fprintf(w, string(b))
+	requests <- string(b)
+
+}
