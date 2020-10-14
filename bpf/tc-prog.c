@@ -10,6 +10,10 @@
 #define TC_ACT_PIPE 3
 #endif
 
+#if !defined(NCPUS)
+#error "Please define NCPUS macro"
+#endif
+
 #define TCP_PORT 80
 
 struct event {
@@ -21,7 +25,7 @@ struct bpf_elf_map __section_maps xevents = {
 	.size_key = sizeof(__u32),
 	.size_value = sizeof(struct event),
 	.pinning = PIN_GLOBAL_NS,
-	.max_elem = 8,
+	.max_elem = NCPUS,
 };
 
 __section("bpf-prog")
@@ -54,7 +58,7 @@ int collect_ips(struct __sk_buff *skb) {
 			if  (bpf_ntohs(dport) != TCP_PORT) {
 				goto end;
 			}
-			xev.ip_addr = bpf_ntohl(ip4->saddr);
+			xev.ip_addr = ip4->saddr;
 			break;
 		}
 
