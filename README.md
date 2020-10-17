@@ -1,5 +1,7 @@
 # eBPF geoip demo
 This repository contains the resources to be used during the eBPF Summit demo.
+* app-x: contains 1 directory per independent app that would be running in the server.
+
 
 ## Demo overview
 **The high level idea for the demo:**<br/>
@@ -12,7 +14,7 @@ The attendees could try making http GET request to any of the services, and in r
 <br/>
 
 **Events flow:**
-* The server to be used will be a Ubuntu VM from GCP (or other cloud provider).
+* The server used is an Ubuntu VM from GCP (or other cloud provider).
 * There would be services running in the VM, exposed using different ports, in the diagram: 8081, 8082 and 8083.
 * A eBPF program will gather the source IPs from the requests and share those with userspace Go app by using an eBPF map.
 * The Go app will get the location with a geoip service.
@@ -72,3 +74,32 @@ curl -X POST http://localhost:3000/request -d '8.8.8.8'
 ES IP Address
 ```
 curl -X POST http://localhost:3000/request -d '138.100.31.225'
+```
+
+## Demo Steps
+### Setup the server
+* The server used is an Ubuntu VM from GCP (or other cloud provider).
+* Don't forget to allow http traffic for this instance.
+* TODO: Configure fw rules to permit traffic to ports: 8081, 8082 and 8083.
+* Install dependencies
+
+```
+$ sudo apt update
+$ sudo apt install make llvm clang golang-go
+```
+
+### Deploy the independent applications
+* `app-x`: contains 1 directory per independent app that would be running in the server.
+    - app-1: running in port 8081, GET http://pubIP:8081/ -> "Hello World!"
+    - app-2: running in port 8081, GET http://pubIP:8081/ -> "eBPF Summit"
+    - app-3: running in port 8081, GET http://pubIP:8081/`my_word` -> "Submitted word: `my_word`"
+
+* Run the servers by running in each app-x directory:
+```
+$ go run main.go&
+```
+<img src="/docs/app-xRunning.png" alt="app-xRunning">
+
+* You can test the above behavior by using both curl or a browser.
+<img src="/docs/app3-submitWord.png" alt="app3-submitWord">
+
