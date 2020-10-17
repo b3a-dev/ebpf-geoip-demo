@@ -7,6 +7,10 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"net"
+
+	"github.com/cilium/ebpf"
+	"github.com/cilium/ebpf/perf"
 
 	"github.com/abh/geoip"
 )
@@ -58,6 +62,43 @@ func main() {
 		log.Fatalln("Could not open GeoIP database")
 	}
 
+	//----------------------------NEW code
+	path := "/sys/fs/bpf/tc/globals/xevents"
+	eventsMap, err := ebpf.LoadPinnedMap(path)
+	if err != nil {
+		log.Fatal("failed to load xevents: ", err)
+	}
+
+	fmt.Printf("MaxEntries=%d\n", eventsMap.ABI().MaxEntries)
+	bufferSize := int(4096 * eventsMap.ABI().MaxEntries)
+	eventsRd, err := perf.NewReader(eventsMap, bufferSize)
+	if err != nil {
+		log.Fatal("Failed to initialize perf ring buffer:", err)
+	}
+	defer eventsRd.Close()
+
+	go func() {
+		for {
+			rec, err := eventsRd.Read()
+			if err != nil {
+				break
+			}
+			ip4 := net.IPv4(
+				rec.RawSample[0],
+				rec.RawSample[1],
+				rec.RawSample[2],
+				rec.RawSample[3],
+			)
+			fmt.Printf("->%s\n", ip4.String())
+			requests <- ip4.String()
+		}
+
+	}()
+
+	
+
+	//----------------------------
+
 	// Serve static files (index.html) for client side in browser
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 
@@ -71,8 +112,8 @@ func main() {
 	// purposes. It simulates reading a request from eBPF
 	http.HandleFunc("/request", exampleRequest)
 
-	log.Println("Listening on :3000...")
-	err = http.ListenAndServe(":3000", nil)
+	log.Println("Listening on :80...")
+	err = http.ListenAndServe(":80", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
