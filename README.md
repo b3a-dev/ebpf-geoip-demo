@@ -39,33 +39,6 @@ The Go app then:
 * Additional endpoint prepared in case there is enough time to implement the post of words and visualization as Words Cloud together with the map.
 
 
-## Run
-
-To run:
-
-```
-go run main.go
-```
-
-And access http://localhost:3000 to check the map
-
-### Create word with POST
-```
-curl -X POST http://localhost:3000/word -d 'word'
-```
-
-### Create a sample request with an IP
-
-US IP Address
-```
-curl -X POST http://localhost:3000/request -d '8.8.8.8'
-```
-
-ES IP Address
-```
-curl -X POST http://localhost:3000/request -d '138.100.31.225'
-```
-
 ## Demo Steps
 ### Setup the server
 * The server used is an Ubuntu VM from GCP (or other cloud provider).
@@ -124,4 +97,12 @@ $ sudo rm /sys/fs/bpf/tc/globals/xevents
 
 ### Run the userpace Go server
 Simple userspace Go server that reads from the eBPF map the source IP addresses written by the eBPF program and shows those updating the map that is serving.
+
+```
+$ sudo go run main.go
+```
+
+And access http://pubIP to check the map:
+
+<img src="/docs/requestsByCountry.png" alt="requestsByCountry">
 

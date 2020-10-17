@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -18,7 +17,7 @@ import (
 // File containing GeoIP Lite database (Maxmind)
 const geoIPFile = "GeoIP.dat"
 
-// mapPoint is usedd to create a point in the Javascript map
+// mapPoint is used to create a point in the Javascript map
 type mapPoint struct {
 
 	// Name of the country
@@ -36,8 +35,6 @@ type mapPoint struct {
 
 // For GeoIP to work you need to have GeoIP lib installed in the system
 // as this Go lib is just a wrapper
-// Mac: `brew install geoip`
-// Ubuntu: `apt-get install -y geoip-database`
 var gi *geoip.GeoIP
 
 // requestsByCountry contains request counter for each country
@@ -61,8 +58,8 @@ func main() {
 	if err != nil {
 		log.Fatalln("Could not open GeoIP database")
 	}
-
-	//----------------------------NEW code
+		
+	// eBPF map
 	path := "/sys/fs/bpf/tc/globals/xevents"
 	eventsMap, err := ebpf.LoadPinnedMap(path)
 	if err != nil {
@@ -89,28 +86,17 @@ func main() {
 				rec.RawSample[2],
 				rec.RawSample[3],
 			)
-			fmt.Printf("->%s\n", ip4.String())
+			//fmt.Printf("->%s\n", ip4.String())
 			requests <- ip4.String()
 		}
 
 	}()
 
-	
-
-	//----------------------------
-
 	// Serve static files (index.html) for client side in browser
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 
 	// Map chart in index.html will call /data.json to read data
-	http.HandleFunc("/data.json", mapDataHanddler)
-
-	// Post new word
-	http.HandleFunc("/word", postWordHandler)
-
-	// Sample request. This endpoint is only for testing
-	// purposes. It simulates reading a request from eBPF
-	http.HandleFunc("/request", exampleRequest)
+	http.HandleFunc("/data.json", mapDataHandler)
 
 	log.Println("Listening on :80...")
 	err = http.ListenAndServe(":80", nil)
@@ -127,14 +113,14 @@ func readRequests() {
 	for {
 		select {
 		case ip := <-requests:
-			fmt.Println("New request ", ip)
+			fmt.Println("New request from: ", ip)
 			go processRequest(ip)
 		}
 	}
 
 }
 
-// processRequest invokes getoIP database to get country code
+// processRequest invokes geoIP database to get country code
 // then increments 2 counters:
 // - specific counter for country code
 // - global counter
@@ -152,13 +138,13 @@ func getCountryByIP(ip string) string {
 
 }
 
-// mapDataHanddler writes the json body needed to draw in the map (index.html)
-// The returnedd object needs to be an array of:
+// mapDataHandler writes the json body needed to draw in the map (index.html)
+// The returned object needs to be an array of:
 // name: Name of the country
 // id: country ID
 // percent: percent of the total requests in that country
 // amount: number requests in that country
-func mapDataHanddler(w http.ResponseWriter, req *http.Request) {
+func mapDataHandler(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	points := []mapPoint{}
@@ -174,45 +160,4 @@ func mapDataHanddler(w http.ResponseWriter, req *http.Request) {
 	}
 	str, _ := json.Marshal(points)
 	fmt.Fprintf(w, string(str))
-}
-
-func postWordHandler(w http.ResponseWriter, req *http.Request) {
-
-	if req.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Read body
-	b, err := ioutil.ReadAll(req.Body)
-	defer req.Body.Close()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Print body back
-	fmt.Fprintf(w, string(b))
-
-}
-
-func exampleRequest(w http.ResponseWriter, req *http.Request) {
-
-	if req.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Read body
-	b, err := ioutil.ReadAll(req.Body)
-	defer req.Body.Close()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Print body back
-	fmt.Fprintf(w, string(b))
-	requests <- string(b)
-
 }
