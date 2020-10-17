@@ -1,10 +1,10 @@
 # eBPF geoip demo
 This repository contains the resources to be used during the eBPF Summit demo.
-* app-x: contains 1 directory per independent app that would be running in the server.
-* bpg: contains ebpf program that inspect incoming TCP packets with the configured destination port, get source IP addresses and write those in a eBPF map, used by the go userspace application.
-* static: static files to show a map in the browser with the representation of the places in the world form where different app-x are accessed.
-* docs: documentation screenshots.
-* The root contains a simple userspace Go server that reads from the eBPF map and shows those updating the map that is serving.
+* **app-x**: contains 1 directory per independent app that would be running in the server.
+* **bpf**: contains ebpf program that inspect incoming TCP packets with the configured destination port, get source IP addresses and write those in a eBPF map, used by the go userspace application.
+* **static**: static files to show a map in the browser with the representation of the places in the world form where different app-x are accessed.
+* **docs**: documentation screenshots.
+* **root dir**: contains a simple userspace Go server that reads from the eBPF map and shows those updating the map that is serving.
 
 ## Demo overview
 **The high level idea for the demo:**<br/>
@@ -68,10 +68,11 @@ $ sudo apt-get install -y geoip-database
 ```
 $ go run main.go&
 ```
-<img src="/docs/app-xRunning.png" alt="app-xRunning">
+<img src="/docs/app-xRunning.png" alt="app-xRunning" width="400">
 
 * You can test the above behavior by using both curl or a browser.
-<img src="/docs/app3-submitWord.png" alt="app3-submitWord">
+
+<img src="/docs/app3-submitWord.png" alt="app3-submitWord" width="400">
 
 
 ### Compile and install the eBPF program
