@@ -68,10 +68,11 @@ $ sudo apt-get install -y geoip-database
 ```
 $ go run main.go&
 ```
-<img src="/docs/app-xRunning.png" alt="app-xRunning">
+<img src="/docs/app-xRunning.png" alt="app-xRunning" width="400">
 
 * You can test the above behavior by using both curl or a browser.
-<img src="/docs/app3-submitWord.png" alt="app3-submitWord">
+
+<img src="/docs/app3-submitWord.png" alt="app3-submitWord" width="400">
 
 
 ### Compile and install the eBPF program
