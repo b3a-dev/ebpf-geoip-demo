@@ -35,7 +35,7 @@ func main() {
 	//  AttachUprobe attaches a uprobe fd to the symbol in the library or binary 'name'
 	// The 'name' argument can be given as either a full library path (/usr/lib/..), a library without the lib prefix,
 	// or as a binary with full path (/bin/bash) A pid can be given to attach to, or -1 to attach to all processes
-	err = bpfModule.AttachUprobe(os.Args[1], "main.HelloServer", uprobeFd, -1)
+	err = bpfModule.AttachUprobe(os.Args[1], "main.respond", uprobeFd, -1)
 	if err != nil {
 		log.Fatal(err)
 	}

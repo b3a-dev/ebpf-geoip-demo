@@ -2,4 +2,6 @@ github.com/abh/geoip v0.0.0-20160510155516-07cea4480daa h1:o7+BnQZpdqHPCc9F2fTWP
 github.com/abh/geoip v0.0.0-20160510155516-07cea4480daa/go.mod h1:N2q9pP3q4thAewFqmOB/DL8EsWimMuDOx4KduwXMT5A=
 github.com/cilium/ebpf v0.0.0-20201005075717-edc4db4deb5b h1:8gHt/Rv262jGvuAlkW2buuyo9HjdwQFmeGQySL9Oocs=
 github.com/cilium/ebpf v0.0.0-20201005075717-edc4db4deb5b/go.mod h1:44MooKJJW1eGX0M0Ne/tB1uxHmzizXDaLREv3WIHrJ0=
+github.com/iovisor/gobpf v0.0.0-20200614202714-e6b321d32103 h1:U2+owsfuUe5xehsVEmLZW91zY1ce7z3/YCQjMLVb6Q4=
+github.com/iovisor/gobpf v0.0.0-20200614202714-e6b321d32103/go.mod h1:+5U5qu5UOu8YJ5oHVLvWKH7/Dr5QNHU7mZ2RfPEeXg8=
 golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
