@@ -15,11 +15,13 @@ const eBPF_Program = `
 
 BPF_PERF_OUTPUT(events);
 
-inline int function_was_called(struct pt_regs *ctx) {
-
+inline int get_arguments(struct pt_regs *ctx) {
+	void* stackAddr = (void*)ctx->sp;
+	char parameter_value[29];
+	bpf_probe_read_kernel(&parameter_value, sizeof(parameter_value), stackAddr+8);
+	events.perf_submit(ctx, &parameter_value, sizeof(parameter_value));
 	char x[29] = "Hey, new request received!";
 	events.perf_submit(ctx, &x, sizeof(x));
-	return 0;
 }
 `
 
@@ -27,7 +29,7 @@ func main() {
 
 	bpfModule := bcc.NewModule(eBPF_Program, []string{})
 
-	uprobeFd, err := bpfModule.LoadUprobe("function_was_called")
+	uprobeFd, err := bpfModule.LoadUprobe("get_arguments")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,7 +37,7 @@ func main() {
 	//  AttachUprobe attaches a uprobe fd to the symbol in the library or binary 'name'
 	// The 'name' argument can be given as either a full library path (/usr/lib/..), a library without the lib prefix,
 	// or as a binary with full path (/bin/bash) A pid can be given to attach to, or -1 to attach to all processes
-	err = bpfModule.AttachUprobe(os.Args[1], "main.respond", uprobeFd, -1)
+	err = bpfModule.AttachUprobe(os.Args[1], "main.postWord", uprobeFd, -1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -58,6 +60,7 @@ func main() {
 	go func() {
 		for {
 			value := <-channel
+			fmt.Println(value)
 			fmt.Println(string(value))
 		}
 	}()
