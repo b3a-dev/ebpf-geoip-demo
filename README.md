@@ -5,6 +5,7 @@ This repository contains the resources to be used during the eBPF Summit demo.
 * **static**: static files to show a map in the browser with the representation of the places in the world form where different app-x are accessed.
 * **docs**: documentation screenshots.
 * **root dir**: contains a simple userspace Go server that reads from the eBPF map and shows those updating the map that is serving.
+* **tracing**: contains an independent second part of the demo, consist on tracing a Go function with eBPF.
 
 ## Demo overview
 **The high level idea for the demo:**<br/>
@@ -22,21 +23,8 @@ The attendees could try making http GET request to any of the services, and in r
 * A eBPF program will gather the source IPs from the requests and share those with userspace Go app by using an eBPF map.
 * The Go app will get the location with a geoip service.
 * Depending on the number of requests from the same country a json structure will be formed.
-* Reading from the json structure the map will represent in real-time points with different sized in those countries with attendees.
+* Reading from the json structure the map will represent points with different sized in those countries with attendees.
 * Additionally more info could be gathered such: number of requests from same IP, number of different IPs (should be the same of number of attendees to the session), which services are accessing..
-
-## Current implementation status
-The eBPF side is not yet done, in order to simulate the behavior:
-* There is an additional endpoint `request` that allows to send IP addresses.
-* Those IP addresses are handled by the function `exampleRequest`, and send to a go channel `requests`.
-
-The Go app then:
-* Reads those IPs from the go channel and process them. 
-* Once the eBPF side is setup, instead of reading those IP addresses from the Go channel they will be read from the eBPF map and process them the same way.
-
-**Potential additions:**
-* Make real-time updates in the client side so there is no need to reload the page to see the new data points in the map.
-* Additional endpoint prepared in case there is enough time to implement the post of words and visualization as Words Cloud together with the map.
 
 
 ## Demo Steps

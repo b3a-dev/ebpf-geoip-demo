@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 func main() {
@@ -11,9 +12,11 @@ func main() {
 }
 
 func helloServer(w http.ResponseWriter, r *http.Request) {
-	respond(w, r.URL.Path[1:])
+	fmt.Fprintf(w, "Submitted word: %s!\n", r.URL.Path[1:])
+	word := strings.TrimSpace(r.URL.Path[1:])
+	postWord(word)
 }
 
-func respond(w http.ResponseWriter, word string) {
-	fmt.Fprintf(w, "Submitted word: %s!\n", word)
+func postWord(word string) {
+	fmt.Println("New request with word:", word)
 }

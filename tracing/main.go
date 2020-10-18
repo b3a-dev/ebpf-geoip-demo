@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/iovisor/gobpf/bcc"
 )
@@ -16,7 +17,7 @@ const eBPF_Program = `
 
 #define SP_OFFSET(offset) (void *)PT_REGS_SP(ctx) + offset * 8
 
-struct http_req {
+struct str_arg {
 	unsigned short len;
 	char parameter_value[256];
 }__attribute__((packed));
@@ -24,14 +25,14 @@ struct http_req {
 BPF_PERF_OUTPUT(events);
 
 int get_arguments(struct pt_regs *ctx) {
-	struct http_req req;
+	struct str_arg arg;
 	char *parameter_value;
     
 	bpf_probe_read(&parameter_value, sizeof(parameter_value), SP_OFFSET(1));
-	bpf_probe_read(&req.len, sizeof(req.len), SP_OFFSET(2));
-	bpf_probe_read_str(&req.parameter_value, sizeof(req.parameter_value), (void *)parameter_value);
+	bpf_probe_read(&arg.len, sizeof(arg.len), SP_OFFSET(2));
+	bpf_probe_read_str(&arg.parameter_value, sizeof(arg.parameter_value), (void *)parameter_value);
 
-	events.perf_submit(ctx, &req, sizeof(req));
+	events.perf_submit(ctx, &arg, sizeof(arg));
 
 	return 0;
 }
@@ -72,8 +73,9 @@ func main() {
 	go func() {
 		for {
 			value := <-channel
-			fmt.Println(value)
-			fmt.Println(string(value))
+			argument := strings.Split(string(value), " ")
+			word := argument[0]
+			fmt.Println(word)
 		}
 	}()
 
