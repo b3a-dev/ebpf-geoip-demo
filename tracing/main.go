@@ -13,15 +13,20 @@ const eBPF_Program = `
 #include <uapi/linux/ptrace.h>
 #include <linux/string.h>
 
+
+#define SP_OFFSET(offset) (void *)PT_REGS_SP(ctx) + offset * 8
+char parameter_value[256];
 BPF_PERF_OUTPUT(events);
 
-inline int get_arguments(struct pt_regs *ctx) {
-	void* stackAddr = (void*)ctx->sp;
-	char parameter_value[29];
-	bpf_probe_read_kernel(&parameter_value, sizeof(parameter_value), stackAddr+8);
+int get_arguments(struct pt_regs *ctx) {
+	char *parameter_value;
+
+	bpf_probe_read(&parameter_value, sizeof(parameter_value), SP_OFFSET(1));
+    bpf_probe_read_str(&parameter_value, sizeof(parameter_value), (void *)parameter_value);
+
 	events.perf_submit(ctx, &parameter_value, sizeof(parameter_value));
-	char x[29] = "Hey, new request received!";
-	events.perf_submit(ctx, &x, sizeof(x));
+
+	return 0;
 }
 `
 
