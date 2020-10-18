@@ -15,16 +15,23 @@ const eBPF_Program = `
 
 
 #define SP_OFFSET(offset) (void *)PT_REGS_SP(ctx) + offset * 8
-char parameter_value[256];
+
+struct http_req {
+	unsigned short len;
+	char parameter_value[256];
+}__attribute__((packed));
+
 BPF_PERF_OUTPUT(events);
 
 int get_arguments(struct pt_regs *ctx) {
+	struct http_req req;
 	char *parameter_value;
-
+    
 	bpf_probe_read(&parameter_value, sizeof(parameter_value), SP_OFFSET(1));
-    bpf_probe_read_str(&parameter_value, sizeof(parameter_value), (void *)parameter_value);
+	bpf_probe_read(&req.len, sizeof(req.len), SP_OFFSET(2));
+	bpf_probe_read_str(&req.parameter_value, sizeof(req.parameter_value), (void *)parameter_value);
 
-	events.perf_submit(ctx, &parameter_value, sizeof(parameter_value));
+	events.perf_submit(ctx, &req, sizeof(req));
 
 	return 0;
 }
