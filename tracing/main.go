@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 
 	"github.com/iovisor/gobpf/bcc"
@@ -82,4 +85,41 @@ func main() {
 	perfMap.Start()
 	<-c
 	perfMap.Stop()
+
+	// Serve static files (index.html) for client side in browser
+	http.Handle("/", http.FileServer(http.Dir("./static")))
+
+	// Word Cloud chart in index.html will call /data.json to read data
+	http.HandleFunc("/wordCloudData.json", wordcloudDataHandler)
+
+	log.Println("Listening on :80...")
+	err = http.ListenAndServe(":80", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// wordcloudDataHandler writes the json body needed to draw in the word cloud (index.html)
+
+// The returned object needs to be an array of:
+// name: Name of the country
+// id: country ID
+// percent: percent of the total requests in that country
+// amount: number requests in that country
+func wordcloudDataHandler(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	points := []mapPoint{}
+	for country, amount := range requestsByCountry {
+		point := mapPoint{
+			Name:    country,
+			ID:      country,
+			Amount:  strconv.Itoa(amount),
+			Percent: fmt.Sprintf("%f", (float64(amount)/float64(requestsTotal))*100),
+		}
+		points = append(points, point)
+
+	}
+	str, _ := json.Marshal(points)
+	fmt.Fprintf(w, string(str))
 }
