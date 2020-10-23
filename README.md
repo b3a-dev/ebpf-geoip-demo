@@ -65,8 +65,17 @@ $ go run main.go&
 
 ### Compile and install the eBPF program
 Inspects incoming TCP packets with the configured destination port (initially 80), get source IP addresses and write those in a eBPF map, used by the go userspace application.
+
+#### Compile:
 ```
 $ CILIUM_DIR=~/cilium/ make -C bpf/
+```
+
+#### Attach the eBPF program:
+This is a tc (traffic control) subsystem program. The [tc(8)](http://man7.org/linux/man-pages/man8/tc-bpf.8.html) command has eBPF support, so we can directly load BPF programs as classifiers. tc programs can classify, modify, redirect or drop packets.
+The basics are: create a "clsact" qdisc classifier for a network device `ens4`, and then add an ingress classifier/filter by specifying the BPF object and relevant ELF section. Example, to add an ingress classifier to ens4 in ELF section `bpf-prog` from tc-prog.o (a bpf-bytecode-compiled object file):
+
+```
 $ sudo tc qdisc add dev ens4 clsact
 $ sudo tc filter add dev ens4 ingress bpf da obj bpf/tc-prog.o sec bpf-prog
 $ sudo tc filter show dev ens4 ingress
@@ -77,6 +86,9 @@ Expected output from last previous command:
 filter protocol all pref 49152 bpf chain 0
 filter protocol all pref 49152 bpf chain 0 handle 0x1 tc-prog.o:[bpf-prog] direct-action not_in_hw id 77 tag 1e2a2ca8a73223a5 jited
 ```
+
+In the case of ingress, we do classification via the core network interface receive function, so we are getting the packet after the driver has processed it but before IP etc 
+
 
 To cleanup:
 ```
