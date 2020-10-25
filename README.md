@@ -43,6 +43,7 @@ $ git clone git@github.com:cilium/cilium.git
 For GeoIP to work you need to have GeoIP lib installed in the system, as the used Go lib is just a wrapper.
 ```
 $ sudo apt-get install -y geoip-database
+$ libgeoip-dev
 ```
 
 ### Deploy the independent applications
